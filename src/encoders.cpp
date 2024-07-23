@@ -63,21 +63,19 @@ void loop() {
     float hpos_recv = 2.0 * PI * static_cast<float>(((rec_link[0] & 0x3F) << 8) | rec_link[1]) / maxEncoderCount ;
     float vpos_recv = 2.0 * PI * static_cast<float>(((rec_link[2] & 0x3F) << 8) | rec_link[3]) / maxEncoderCount ;
 
-    //if (rec_link[4] == 21) {
-      Serial.print("hpos: ");
-      Serial.print(hpos_ang);
-      Serial.print(", vpos: ");
-      Serial.print(vpos_ang);
-      Serial.print(", hcom: ");
-      Serial.print(hcom_ang);
-      Serial.print(", vcom: ");
-      Serial.print(vcom_ang);
-      Serial.print(", hpos_recv: ");
-      Serial.print(hpos_recv);
-      Serial.print(", vpos_recv: ");
-      Serial.println(vpos_recv);
-    //}
+    Serial.print("hpos: ");
+    Serial.print(hpos_ang);
+    Serial.print(", vpos: ");
+    Serial.print(vpos_ang);
+    Serial.print(", hcom: ");
+    Serial.print(hcom_ang);
+    Serial.print(", vcom: ");
+    Serial.print(vcom_ang);
+    Serial.print(", hpos_recv: ");
+    Serial.print(hpos_recv);
+    Serial.print(", vpos_recv: ");
+    Serial.println(vpos_recv);
 
-    //Serial.println(DMA_DCHPRI10);
   }
+  
 }
