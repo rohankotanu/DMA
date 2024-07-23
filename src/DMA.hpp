@@ -29,6 +29,8 @@ class DMA {
       // Enable DMA clock if not already enabled
         CCM_CCGR5 |= CCM_CCGR5_DMA(CCM_CCGR_ON);
 
+        DMA_CR |= DMA_CR_ERGA;
+
       // Enable interrupt requests
       __enable_irq();
 
@@ -91,8 +93,8 @@ class DMA {
         IMXRT_DMA_TCD[rx_ch].SOFF = 0;
         IMXRT_DMA_TCD[rx_ch].SLAST = 0;
         IMXRT_DMA_TCD[rx_ch].DADDR = dest;
-        IMXRT_DMA_TCD[rx_ch].DOFF = 1;
-        IMXRT_DMA_TCD[rx_ch].DLASTSGA = -2;
+        IMXRT_DMA_TCD[rx_ch].DOFF = -1;
+        IMXRT_DMA_TCD[rx_ch].DLASTSGA = 2;
         IMXRT_DMA_TCD[rx_ch].ATTR = 0;
         IMXRT_DMA_TCD[rx_ch].CSR = 0;
         DMA_SERQ = rx_ch; // Enable channel
@@ -130,8 +132,7 @@ class DMA {
         IMXRT_DMA_TCD[tx_ch].CITER = 3;
         IMXRT_DMA_TCD[tx_ch].BITER = 3;
         IMXRT_DMA_TCD[tx_ch].NBYTES = 2;
-        IMXRT_DMA_TCD[tx_ch].SADDR = (uint32_t*)((uint32_t)src);
-        //IMXRT_DMA_TCD[tx_ch].NBYTES_MLOFFYES = (0b1 << 31) | 2;
+        IMXRT_DMA_TCD[tx_ch].SADDR = src;
         IMXRT_DMA_TCD[tx_ch].SOFF = 1;
         IMXRT_DMA_TCD[tx_ch].SLAST = -6;
         IMXRT_DMA_TCD[tx_ch].DADDR = &((*LPUART).DATA);
@@ -139,8 +140,7 @@ class DMA {
         IMXRT_DMA_TCD[tx_ch].DLASTSGA = 0;
         IMXRT_DMA_TCD[tx_ch].ATTR = 0;
         IMXRT_DMA_TCD[tx_ch].CSR = 0;
-        //DMA_CR |= DMA_CR_EMLM;
-        DMA_SERQ = tx_ch; // Enable channel
+        //DMA_SERQ = tx_ch; // Enable channel
 
         /**** Init DMA RX channel that places the encoder reading in memory ****/
 
@@ -241,7 +241,7 @@ class DMA {
       /**** Set Up UART Channel ****/
 
       // Set up the serial port
-      s.begin(115200, SERIAL_8N1);
+      s.begin(SERIAL_8N1);
       // LPUART BAUG Register (page 2920)
       // Oversampling Ratio: Set to 12 (bits 24-28)
       // Transmitter DMA Enable: Enable DMA requests (bit 23)
@@ -281,7 +281,7 @@ class DMA {
 
           // Timer Load Value Register (page 3046)
           // Set up timer for 2400 cycles (24 MHz clock / 2400 clock cycles = 10 kHz timer)
-          *PIT_LDVAL = 24000000 - 1;
+          *PIT_LDVAL = 2400 - 1;
 
           // Timer Control Register (page 3048)
           // Timer Interrupt Enable: Interrupt is requested whenever TIF is set (bit 1)
