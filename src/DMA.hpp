@@ -33,7 +33,7 @@ class DMA {
       __enable_irq();
 
       // Turn on PIT
-      PIT_MCR = 0x00;
+      //PIT_MCR = 0x00;
     }
 
     /**
@@ -127,10 +127,11 @@ class DMA {
         *TX_CHANNEL_CONFIG = ((0b1 << 31) | (0b1 << 30) | TX_DMAMUX_SOURCES[lpuart_channels[serial_ch-1]-1]);
 
         // Configure the TCD for the DMA channel
-        IMXRT_DMA_TCD[tx_ch].CITER = 1;
-        IMXRT_DMA_TCD[tx_ch].BITER = 1;
-        IMXRT_DMA_TCD[tx_ch].NBYTES = 6;
-        IMXRT_DMA_TCD[tx_ch].SADDR = src;
+        IMXRT_DMA_TCD[tx_ch].CITER = 3;
+        IMXRT_DMA_TCD[tx_ch].BITER = 3;
+        IMXRT_DMA_TCD[tx_ch].NBYTES = 2;
+        IMXRT_DMA_TCD[tx_ch].SADDR = (uint32_t*)((uint32_t)src);
+        //IMXRT_DMA_TCD[tx_ch].NBYTES_MLOFFYES = (0b1 << 31) | 2;
         IMXRT_DMA_TCD[tx_ch].SOFF = 1;
         IMXRT_DMA_TCD[tx_ch].SLAST = -6;
         IMXRT_DMA_TCD[tx_ch].DADDR = &((*LPUART).DATA);
@@ -138,6 +139,7 @@ class DMA {
         IMXRT_DMA_TCD[tx_ch].DLASTSGA = 0;
         IMXRT_DMA_TCD[tx_ch].ATTR = 0;
         IMXRT_DMA_TCD[tx_ch].CSR = 0;
+        //DMA_CR |= DMA_CR_EMLM;
         DMA_SERQ = tx_ch; // Enable channel
 
         /**** Init DMA RX channel that places the encoder reading in memory ****/
@@ -148,9 +150,9 @@ class DMA {
         *RX_CHANNEL_CONFIG = ((0b1 << 31) | RX_DMAMUX_SOURCES[lpuart_channels[serial_ch-1]-1]);
 
         // Configure the TCD for the DMA channel
-        IMXRT_DMA_TCD[rx_ch].CITER = 1;
-        IMXRT_DMA_TCD[rx_ch].BITER = 1;
-        IMXRT_DMA_TCD[rx_ch].NBYTES = 6;
+        IMXRT_DMA_TCD[rx_ch].CITER = 3;
+        IMXRT_DMA_TCD[rx_ch].BITER = 3;
+        IMXRT_DMA_TCD[rx_ch].NBYTES = 2;
         IMXRT_DMA_TCD[rx_ch].SADDR = &((*LPUART).DATA);
         IMXRT_DMA_TCD[rx_ch].SOFF = 0;
         IMXRT_DMA_TCD[rx_ch].SLAST = 0;
@@ -239,7 +241,7 @@ class DMA {
       /**** Set Up UART Channel ****/
 
       // Set up the serial port
-      s.begin(SERIAL_8N1);
+      s.begin(115200, SERIAL_8N1);
       // LPUART BAUG Register (page 2920)
       // Oversampling Ratio: Set to 12 (bits 24-28)
       // Transmitter DMA Enable: Enable DMA requests (bit 23)
@@ -262,7 +264,9 @@ class DMA {
       // Receiver Enable (bit 18)
       (*LPUART).CTRL |= (0b11 << 18);
       // Specify TX Enable pin
-      *(portConfigRegister(tx_enable_pins[serial_ch-1])) = 2;
+      if (tx_enable_pins[serial_ch-1] != 0) {
+        *(portConfigRegister(tx_enable_pins[serial_ch-1])) = 2;
+      }
 
       return LPUART;
     }
@@ -276,8 +280,8 @@ class DMA {
           uint32_t* PIT_TCTRL = (uint32_t*)(0x40084108 + ch * 0x10);
 
           // Timer Load Value Register (page 3046)
-          // Set up timer for 2400 cycles (24 MHz clock / 2400 clock cycles = 1 kHz timer)
-          *PIT_LDVAL = 2400 - 1;
+          // Set up timer for 2400 cycles (24 MHz clock / 2400 clock cycles = 10 kHz timer)
+          *PIT_LDVAL = 24000000 - 1;
 
           // Timer Control Register (page 3048)
           // Timer Interrupt Enable: Interrupt is requested whenever TIF is set (bit 1)
