@@ -18,6 +18,10 @@ int tx_enable_pins[8] = {54, 0, 18, 41, 0, 0, 0, 49};
 int TX_DMAMUX_SOURCES[8] = {DMAMUX_SOURCE_LPUART1_TX, DMAMUX_SOURCE_LPUART2_TX, DMAMUX_SOURCE_LPUART3_TX, DMAMUX_SOURCE_LPUART4_TX, DMAMUX_SOURCE_LPUART5_TX, DMAMUX_SOURCE_LPUART6_TX, DMAMUX_SOURCE_LPUART7_TX, DMAMUX_SOURCE_LPUART8_TX};
 int RX_DMAMUX_SOURCES[8] = {DMAMUX_SOURCE_LPUART1_RX, DMAMUX_SOURCE_LPUART2_RX, DMAMUX_SOURCE_LPUART3_RX, DMAMUX_SOURCE_LPUART4_RX, DMAMUX_SOURCE_LPUART5_RX, DMAMUX_SOURCE_LPUART6_RX, DMAMUX_SOURCE_LPUART7_RX, DMAMUX_SOURCE_LPUART8_RX};
 
+// These arrays track the DMA channel numbers for each Hardware Serial port
+int tx_channels[9];
+int rx_channels[9];
+
 class DMA {
 
   public:
@@ -29,7 +33,7 @@ class DMA {
       // Enable DMA clock if not already enabled
         CCM_CCGR5 |= CCM_CCGR5_DMA(CCM_CCGR_ON);
 
-        DMA_CR |= DMA_CR_ERGA;
+        DMA_CR &= ~DMA_CR_ERGA;
 
       // Enable interrupt requests
       __enable_irq();
@@ -49,6 +53,10 @@ class DMA {
         int tx_ch = next_dma_ch_; // The DMA channel number that will be used for transmitting data over UART
         int rx_ch = next_dma_ch_ + 16; // The DMA channel number that will be used for receiving data over UART
         next_dma_ch_++; // Increment the next available DMA channel
+
+        // Keep track of DMA channels used
+        tx_channels[serial_ch] = tx_ch;
+        rx_channels[serial_ch] = rx_ch;
 
         IMXRT_LPUART_t* LPUART = configureUART(serial_ch);
         
@@ -108,8 +116,9 @@ class DMA {
      * @param serial_ch The number of the HarwareSerial channel to be used.
      * @param src A pointer to the address of the encoder value(s) to be transmitted
      * @param dest A pointer to where the incoming encoder value(s) should be stored
+     * @param link_serial_ch The number of the HardwareSerial channel that should trigger transmissions of this DMA link channel
      */
-    void addLinkChannel(const int serial_ch, const void* src, volatile void* dest) {
+    void addLinkChannel(const int serial_ch, const void* src, volatile void* dest, int link_serial_ch) {
         int tx_ch = next_dma_ch_; // The DMA channel number that will be used for transmitting data over UART
         int rx_ch = next_dma_ch_ + 16; // The DMA channel number that will be used for receiving data over UART
         next_dma_ch_++; // Increment the next available DMA channel
@@ -140,7 +149,10 @@ class DMA {
         IMXRT_DMA_TCD[tx_ch].DLASTSGA = 0;
         IMXRT_DMA_TCD[tx_ch].ATTR = 0;
         IMXRT_DMA_TCD[tx_ch].CSR = 0;
-        //DMA_SERQ = tx_ch; // Enable channel
+        
+        DMA_CERQ = rx_channels[link_serial_ch];
+        IMXRT_DMA_TCD[rx_channels[link_serial_ch]].CSR |= (tx_ch << 8) | (0b1 <<5);
+        DMA_SERQ = rx_channels[link_serial_ch];
 
         /**** Init DMA RX channel that places the encoder reading in memory ****/
 

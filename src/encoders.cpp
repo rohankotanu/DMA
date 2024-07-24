@@ -26,22 +26,10 @@ void setup() {
   dma.addUARTEncoder(1, &encoder_command, com_encoders+1); // HCOM
   dma.addUARTEncoder(3, &encoder_command, com_encoders+3); // VCOM
 
-  dma.addLinkChannel(6, pos_encoders, rec_link);
+  dma.addLinkChannel(6, pos_encoders, rec_link, 8);
   //dma.addStateChannel(7, &state, &recv_state);
 
-  DMA_CERQ = 17;
-  IMXRT_DMA_TCD[17].CSR |= (0x4 << 8) | (0b1 <<5);
-  DMA_SERQ = 17;
 
-  // IMXRT_LPUART_t* LPUART = (IMXRT_LPUART_t*)(0x40184000 + (5) * 0x4000); // Pointer to the LPUART registers corresponding to the desired HardwareSerial port
-
-  // uint32_t temp;
-  // (*LPUART).CTRL &= ~(0b11 << 18);
-  // while ((*LPUART).CTRL & (0b11<<18)) {;}
-  // // while (rec_link[0] != 0x0015) {
-  // //   temp = (*LPUART).DATA;
-  // // }
-  // (*LPUART).CTRL |= (0b11<<18);
   Serial.begin(115200);
   while (rec_link[4] != 21) {
     Serial.println(rec_link[4]);
@@ -77,5 +65,5 @@ void loop() {
     Serial.println(vpos_recv);
 
   }
-  
+
 }
